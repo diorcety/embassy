@@ -108,32 +108,55 @@ pub fn stop_with_rtc(rtc: &'static Rtc) {
 /// prevents entering the given stop mode.
 pub fn stop_ready(stop_mode: StopMode) -> bool {
     match unsafe { EXECUTOR.as_mut().unwrap() }.stop_mode() {
+        Some(StopMode::Shutdown) => true,
+        Some(StopMode::Standby) => true,
         Some(StopMode::Stop2) => true,
         Some(StopMode::Stop1) => stop_mode == StopMode::Stop1,
         None => false,
     }
 }
 
+pub fn force_stop_mode(stop_mode: Option<StopMode>) {
+    unsafe { EXECUTOR.as_mut().unwrap() }.force_stop_mode(stop_mode)
+}
+
+pub fn forced_stop_mode() -> Option<StopMode> {
+    unsafe { EXECUTOR.as_mut().unwrap() }.forced_stop_mode()
+}
+
 /// Available Stop modes.
 #[non_exhaustive]
-#[derive(PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum StopMode {
     /// STOP 1
     Stop1,
     /// STOP 2
     Stop2,
+    /// STANDBY
+    Standby,
+    /// SHUTDOWN
+    Shutdown,
 }
 
-#[cfg(any(stm32l4, stm32l5, stm32u5, stm32u0))]
+#[cfg(any(stm32l4, stm32l5, stm32u5, stm32u0, stm32wle5))]
 use stm32_metapac::pwr::vals::Lpms;
 
-#[cfg(any(stm32l4, stm32l5, stm32u5, stm32u0))]
+#[cfg(any(stm32l4, stm32l5, stm32u5, stm32u0, stm32wle5))]
 impl Into<Lpms> for StopMode {
     fn into(self) -> Lpms {
         match self {
             StopMode::Stop1 => Lpms::STOP1,
             StopMode::Stop2 => Lpms::STOP2,
+            StopMode::Standby => Lpms::STANDBY,
+            StopMode::Shutdown => Lpms::SHUTDOWN,
         }
+    }
+}
+
+#[cfg(any(stm32l4, stm32l5, stm32u5, stm32u0, stm32wle5))]
+impl Into<u8> for StopMode {
+    fn into(self) -> u8 {
+        Into::<Lpms>::into(self).into()
     }
 }
 
@@ -152,6 +175,7 @@ pub struct Executor {
     not_send: PhantomData<*mut ()>,
     scb: SCB,
     time_driver: &'static RtcDriver,
+    stop_mode: Option<StopMode>,
 }
 
 impl Executor {
@@ -165,6 +189,7 @@ impl Executor {
                 not_send: PhantomData,
                 scb: cortex_m::Peripherals::steal().SCB,
                 time_driver: get_driver(),
+                stop_mode: None,
             });
 
             let executor = EXECUTOR.as_mut().unwrap();
@@ -186,19 +211,32 @@ impl Executor {
         trace!("low power: stop with rtc configured");
     }
 
+    pub(self) fn force_stop_mode(&mut self, stop_mode: Option<StopMode>) {
+        self.stop_mode = stop_mode;
+    }
+
+    pub(self) fn forced_stop_mode(&self) -> Option<StopMode> {
+        return self.stop_mode;
+    }
+
     fn stop_mode(&self) -> Option<StopMode> {
-        if unsafe { crate::rcc::REFCOUNT_STOP2 == 0 } && unsafe { crate::rcc::REFCOUNT_STOP1 == 0 } {
-            Some(StopMode::Stop2)
-        } else if unsafe { crate::rcc::REFCOUNT_STOP1 == 0 } {
-            Some(StopMode::Stop1)
-        } else {
-            None
+        match self.stop_mode {
+             Some(x) => Some(x),
+             None => {
+                if unsafe { crate::rcc::REFCOUNT_STOP2 == 0 } && unsafe { crate::rcc::REFCOUNT_STOP1 == 0 } {
+                    Some(StopMode::Stop2)
+                } else if unsafe { crate::rcc::REFCOUNT_STOP1 == 0 } {
+                    Some(StopMode::Stop1)
+                } else {
+                    None
+                }
+             },
         }
     }
 
     #[allow(unused_variables)]
     fn configure_stop(&mut self, stop_mode: StopMode) {
-        #[cfg(any(stm32l4, stm32l5, stm32u5, stm32u0))]
+        #[cfg(any(stm32l4, stm32l5, stm32u5, stm32u0, stm32wle5))]
         crate::pac::PWR.cr1().modify(|m| m.set_lpms(stop_mode.into()));
         #[cfg(stm32h5)]
         crate::pac::PWR.pmcr().modify(|v| {
@@ -227,6 +265,8 @@ impl Executor {
 
         let stop_mode = stop_mode.unwrap();
         match stop_mode {
+            StopMode::Shutdown => trace!("low power: shutdown"),
+            StopMode::Standby => trace!("low power: standby"),
             StopMode::Stop1 => trace!("low power: stop 1"),
             StopMode::Stop2 => trace!("low power: stop 2"),
         }
