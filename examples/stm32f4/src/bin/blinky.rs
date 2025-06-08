@@ -9,7 +9,7 @@ use embassy_executor::Spawner;
 use embassy_stm32::gpio::{Level, Output, Speed};
 use embassy_stm32::pac::{self};
 use embassy_stm32::peripherals::PB7;
-use embassy_time::{Timer};
+use embassy_time::{Timer, TickType};
 use panic_halt as _;
 
 use critical_section::{CriticalSection, Mutex};
@@ -51,18 +51,18 @@ impl MyDriver {
         }
     }
 
-    fn set_alarm(&self, cs: &CriticalSection, at: u64) -> bool {
+    fn set_alarm(&self, cs: &CriticalSection, at: TickType) -> bool {
         self.next.store(at as u32, Ordering::Relaxed);
         true
     }
 }
 
 impl Driver for MyDriver {
-    fn now(&self) -> u64 {
-        self.ticks.load(Ordering::Relaxed) as u64
+    fn now(&self) -> TickType {
+        self.ticks.load(Ordering::Relaxed) as TickType
     }
 
-    fn schedule_wake(&self, at: u64, waker: &Waker) {
+    fn schedule_wake(&self, at: TickType, waker: &Waker) {
         critical_section::with(|cs| {
             let mut queue = self.queue.borrow(cs).borrow_mut();
             if queue.schedule_wake(at, waker) {

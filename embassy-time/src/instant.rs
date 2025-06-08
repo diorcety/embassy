@@ -1,20 +1,20 @@
 use core::fmt;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
-use super::{Duration, GCD_1K, GCD_1M, TICK_HZ};
+use super::{TickType, Duration, GCD_1K, GCD_1M, TICK_HZ};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 /// An Instant in time, based on the MCU's clock ticks since startup.
 pub struct Instant {
-    ticks: u64,
+    ticks: TickType,
 }
 
 impl Instant {
     /// The smallest (earliest) value that can be represented by the `Instant` type.
-    pub const MIN: Instant = Instant { ticks: u64::MIN };
+    pub const MIN: Instant = Instant { ticks: TickType::MIN };
     /// The largest (latest) value that can be represented by the `Instant` type.
-    pub const MAX: Instant = Instant { ticks: u64::MAX };
+    pub const MAX: Instant = Instant { ticks: TickType::MAX };
 
     /// Returns an Instant representing the current time.
     #[inline]
@@ -25,26 +25,26 @@ impl Instant {
     }
 
     /// Create an Instant from a tick count since system boot.
-    pub const fn from_ticks(ticks: u64) -> Self {
+    pub const fn from_ticks(ticks: TickType) -> Self {
         Self { ticks }
     }
 
     /// Create an Instant from a microsecond count since system boot.
-    pub const fn from_micros(micros: u64) -> Self {
+    pub const fn from_micros(micros: TickType) -> Self {
         Self {
             ticks: micros * (TICK_HZ / GCD_1M) / (1_000_000 / GCD_1M),
         }
     }
 
     /// Create an Instant from a millisecond count since system boot.
-    pub const fn from_millis(millis: u64) -> Self {
+    pub const fn from_millis(millis: TickType) -> Self {
         Self {
             ticks: millis * (TICK_HZ / GCD_1K) / (1000 / GCD_1K),
         }
     }
 
     /// Create an Instant from a second count since system boot.
-    pub const fn from_secs(seconds: u64) -> Self {
+    pub const fn from_secs(seconds: TickType) -> Self {
         Self {
             ticks: seconds * TICK_HZ,
         }
@@ -52,7 +52,7 @@ impl Instant {
 
     /// Try to create an Instant from a microsecond count since system boot.
     /// Fails if the number of microseconds is too large.
-    pub const fn try_from_micros(micros: u64) -> Option<Self> {
+    pub const fn try_from_micros(micros: TickType) -> Option<Self> {
         let Some(value) = micros.checked_mul(TICK_HZ / GCD_1M) else {
             return None;
         };
@@ -63,7 +63,7 @@ impl Instant {
 
     /// Try to create an Instant from a millisecond count since system boot.
     /// Fails if the number of milliseconds is too large.
-    pub const fn try_from_millis(millis: u64) -> Option<Self> {
+    pub const fn try_from_millis(millis: TickType) -> Option<Self> {
         let Some(value) = millis.checked_mul(TICK_HZ / GCD_1K) else {
             return None;
         };
@@ -74,7 +74,7 @@ impl Instant {
 
     /// Try to create an Instant from a second count since system boot.
     /// Fails if the number of seconds is too large.
-    pub const fn try_from_secs(seconds: u64) -> Option<Self> {
+    pub const fn try_from_secs(seconds: TickType) -> Option<Self> {
         let Some(ticks) = seconds.checked_mul(TICK_HZ) else {
             return None;
         };
@@ -82,22 +82,22 @@ impl Instant {
     }
 
     /// Tick count since system boot.
-    pub const fn as_ticks(&self) -> u64 {
+    pub const fn as_ticks(&self) -> TickType {
         self.ticks
     }
 
     /// Seconds since system boot.
-    pub const fn as_secs(&self) -> u64 {
+    pub const fn as_secs(&self) -> TickType {
         self.ticks / TICK_HZ
     }
 
     /// Milliseconds since system boot.
-    pub const fn as_millis(&self) -> u64 {
+    pub const fn as_millis(&self) -> TickType {
         self.ticks * (1000 / GCD_1K) / (TICK_HZ / GCD_1K)
     }
 
     /// Microseconds since system boot.
-    pub const fn as_micros(&self) -> u64 {
+    pub const fn as_micros(&self) -> TickType {
         self.ticks * (1_000_000 / GCD_1M) / (TICK_HZ / GCD_1M)
     }
 

@@ -27,11 +27,11 @@
 //! struct MyDriver{} // not public!
 //!
 //! impl Driver for MyDriver {
-//!     fn now(&self) -> u64 {
+//!     fn now(&self) -> TickType {
 //!         todo!()
 //!     }
 //!
-//!     fn schedule_wake(&self, at: u64, waker: &Waker) {
+//!     fn schedule_wake(&self, at: TickType, waker: &Waker) {
 //!         todo!()
 //!     }
 //! }
@@ -62,15 +62,15 @@
 //! }
 //!
 //! impl MyDriver {
-//!    fn set_alarm(&self, cs: &CriticalSection, at: u64) -> bool {
+//!    fn set_alarm(&self, cs: &CriticalSection, at: TickType) -> bool {
 //!        todo!()
 //!    }
 //! }
 //!
 //! impl Driver for MyDriver {
-//!     fn now(&self) -> u64 { todo!() }
+//!     fn now(&self) -> TickType { todo!() }
 //!
-//!     fn schedule_wake(&self, at: u64, waker: &Waker) {
+//!     fn schedule_wake(&self, at: TickType, waker: &Waker) {
 //!         critical_section::with(|cs| {
 //!             let mut queue = self.queue.borrow(cs).borrow_mut();
 //!             if queue.schedule_wake(at, waker) {
@@ -88,8 +88,8 @@
 //!
 //! Instead of the usual "trait + generic params" approach, calls from embassy to the driver are done via `extern` functions.
 //!
-//! `embassy` internally defines the driver function as `extern "Rust" { fn _embassy_time_now() -> u64; }` and calls it.
-//! The driver crate defines the function as `#[no_mangle] fn _embassy_time_now() -> u64`. The linker will resolve the
+//! `embassy` internally defines the driver function as `extern "Rust" { fn _embassy_time_now() -> TickType; }` and calls it.
+//! The driver crate defines the function as `#[no_mangle] fn _embassy_time_now() -> TickType`. The linker will resolve the
 //! calls from the `embassy` crate to call into the driver crate.
 //!
 //! If there is none or multiple drivers in the crate tree, linking will fail.
@@ -112,7 +112,8 @@ mod tick;
 /// Ticks per second of the global timebase.
 ///
 /// This value is specified by the [`tick-*` Cargo features](crate#tick-rate)
-pub const TICK_HZ: u64 = tick::TICK_HZ;
+pub const TICK_HZ: TickType = tick::TICK_HZ;
+pub use tick::TickType;
 
 /// Time driver
 pub trait Driver: Send + Sync + 'static {
@@ -126,27 +127,27 @@ pub trait Driver: Send + Sync + 'static {
     ///   10_000 years from now.). This means if your hardware only has 16bit/32bit timers
     ///   you MUST extend them to 64-bit, for example by counting overflows in software,
     ///   or chaining multiple timers together.
-    fn now(&self) -> u64;
+    fn now(&self) -> TickType;
 
     /// Schedules a waker to be awoken at moment `at`.
     /// If this moment is in the past, the waker might be awoken immediately.
-    fn schedule_wake(&self, at: u64, waker: &Waker);
+    fn schedule_wake(&self, at: TickType, waker: &Waker);
 }
 
 extern "Rust" {
-    fn _embassy_time_now() -> u64;
-    fn _embassy_time_schedule_wake(at: u64, waker: &Waker);
+    fn _embassy_time_now() -> TickType;
+    fn _embassy_time_schedule_wake(at: TickType, waker: &Waker);
 }
 
 /// See [`Driver::now`]
 #[inline]
-pub fn now() -> u64 {
+pub fn now() -> TickType {
     unsafe { _embassy_time_now() }
 }
 
 /// Schedule the given waker to be woken at `at`.
 #[inline]
-pub fn schedule_wake(at: u64, waker: &Waker) {
+pub fn schedule_wake(at: TickType, waker: &Waker) {
     unsafe { _embassy_time_schedule_wake(at, waker) }
 }
 
@@ -160,13 +161,13 @@ macro_rules! time_driver_impl {
 
         #[no_mangle]
         #[inline]
-        fn _embassy_time_now() -> u64 {
+        fn _embassy_time_now() -> TickType {
             <$t as $crate::Driver>::now(&$name)
         }
 
         #[no_mangle]
         #[inline]
-        fn _embassy_time_schedule_wake(at: u64, waker: &core::task::Waker) {
+        fn _embassy_time_schedule_wake(at: TickType, waker: &core::task::Waker) {
             <$t as $crate::Driver>::schedule_wake(&$name, at, waker);
         }
     };

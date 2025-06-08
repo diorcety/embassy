@@ -58,6 +58,7 @@ trybuild = "1.0"
 embassy-sync = { path = "../embassy-sync" }
 
 [features]
+tick-u32 = []
 
 ## Enable nightly-only features
 nightly = ["embassy-executor-macros/nightly"]

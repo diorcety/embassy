@@ -5,7 +5,7 @@ use core::task::{Context, Poll};
 use futures_util::stream::FusedStream;
 use futures_util::Stream;
 
-use crate::{Duration, Instant};
+use crate::{Duration, Instant, TickType};
 
 /// Error returned by [`with_timeout`] and [`with_deadline`] on timeout.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -131,7 +131,7 @@ impl Timer {
     /// This method is a convenience wrapper for calling `Timer::after(Duration::from_ticks())`.
     /// For more details, refer to [`Timer::after()`] and [`Duration::from_ticks()`].
     #[inline]
-    pub fn after_ticks(ticks: u64) -> Self {
+    pub fn after_ticks(ticks: TickType) -> Self {
         Self::after(Duration::from_ticks(ticks))
     }
 
@@ -140,7 +140,7 @@ impl Timer {
     /// This method is a convenience wrapper for calling `Timer::after(Duration::from_nanos())`.
     /// For more details, refer to [`Timer::after()`] and [`Duration::from_nanos()`].
     #[inline]
-    pub fn after_nanos(nanos: u64) -> Self {
+    pub fn after_nanos(nanos: TickType) -> Self {
         Self::after(Duration::from_nanos(nanos))
     }
 
@@ -149,7 +149,7 @@ impl Timer {
     /// This method is a convenience wrapper for calling `Timer::after(Duration::from_micros())`.
     /// For more details, refer to [`Timer::after()`] and [`Duration::from_micros()`].
     #[inline]
-    pub fn after_micros(micros: u64) -> Self {
+    pub fn after_micros(micros: TickType) -> Self {
         Self::after(Duration::from_micros(micros))
     }
 
@@ -158,7 +158,7 @@ impl Timer {
     /// This method is a convenience wrapper for calling `Timer::after(Duration::from_millis())`.
     /// For more details, refer to [`Timer::after`] and [`Duration::from_millis()`].
     #[inline]
-    pub fn after_millis(millis: u64) -> Self {
+    pub fn after_millis(millis: TickType) -> Self {
         Self::after(Duration::from_millis(millis))
     }
 
@@ -167,7 +167,7 @@ impl Timer {
     /// This method is a convenience wrapper for calling `Timer::after(Duration::from_secs())`.
     /// For more details, refer to [`Timer::after`] and [`Duration::from_secs()`].
     #[inline]
-    pub fn after_secs(secs: u64) -> Self {
+    pub fn after_secs(secs: TickType) -> Self {
         Self::after(Duration::from_secs(secs))
     }
 }

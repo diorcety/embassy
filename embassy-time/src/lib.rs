@@ -28,11 +28,13 @@ mod driver_wasm;
 
 pub use delay::{block_for, Delay};
 pub use duration::Duration;
+pub use duration::DurationType;
 pub use embassy_time_driver::TICK_HZ;
+pub use embassy_time_driver::TickType;
 pub use instant::Instant;
 pub use timer::{with_deadline, with_timeout, Ticker, TimeoutError, Timer, WithTimeout};
 
-const fn gcd(a: u64, b: u64) -> u64 {
+const fn gcd(a: DurationType, b: DurationType) -> DurationType {
     if b == 0 {
         a
     } else {
@@ -40,24 +42,43 @@ const fn gcd(a: u64, b: u64) -> u64 {
     }
 }
 
-pub(crate) const GCD_1K: u64 = gcd(TICK_HZ, 1_000);
-pub(crate) const GCD_1M: u64 = gcd(TICK_HZ, 1_000_000);
-pub(crate) const GCD_1G: u64 = gcd(TICK_HZ, 1_000_000_000);
+pub(crate) const GCD_1K: DurationType = gcd(TICK_HZ, 1_000);
+pub(crate) const GCD_1M: DurationType = gcd(TICK_HZ, 1_000_000);
+pub(crate) const GCD_1G: DurationType = gcd(TICK_HZ, 1_000_000_000);
 
-#[cfg(feature = "defmt-timestamp-uptime-s")]
+#[cfg(all(feature = "defmt-timestamp-uptime-s", feature = "duration-u32"))]
+defmt::timestamp! {"{=u32}", Instant::now().as_secs()}
+
+#[cfg(all(feature = "defmt-timestamp-uptime-s", not(feature = "duration-u32")))]
 defmt::timestamp! {"{=u64}", Instant::now().as_secs() }
 
-#[cfg(feature = "defmt-timestamp-uptime-ms")]
+#[cfg(all(feature = "defmt-timestamp-uptime-ms", feature = "duration-u32"))]
+defmt::timestamp! {"{=u32:ms}", Instant::now().as_millis()}
+
+#[cfg(all(feature = "defmt-timestamp-uptime-ms", not(feature = "duration-u32")))]
 defmt::timestamp! {"{=u64:ms}", Instant::now().as_millis() }
 
-#[cfg(any(feature = "defmt-timestamp-uptime", feature = "defmt-timestamp-uptime-us"))]
+#[cfg(all(any(feature = "defmt-timestamp-uptime", feature = "defmt-timestamp-uptime-us"), feature = "duration-u32"))]
+defmt::timestamp! {"{=u32:us}", Instant::now().as_micros()}
+
+#[cfg(all(any(feature = "defmt-timestamp-uptime", feature = "defmt-timestamp-uptime-us"), not(feature = "duration-u32")))]
 defmt::timestamp! {"{=u64:us}", Instant::now().as_micros() }
 
-#[cfg(feature = "defmt-timestamp-uptime-ts")]
+#[cfg(all(feature = "defmt-timestamp-uptime-ts", feature = "duration-u32"))]
+defmt::timestamp! {"{=u32:ts}", Instant::now().as_secs()}
+
+#[cfg(all(feature = "defmt-timestamp-uptime-ts", not(feature = "duration-u32")))]
 defmt::timestamp! {"{=u64:ts}", Instant::now().as_secs() }
 
-#[cfg(feature = "defmt-timestamp-uptime-tms")]
+#[cfg(all(feature = "defmt-timestamp-uptime-tms", feature = "duration-u32"))]
+defmt::timestamp! {"{=u32:tms}", Instant::now().as_millis()}
+
+#[cfg(all(feature = "defmt-timestamp-uptime-tms", not(feature = "duration-u32")))]
 defmt::timestamp! {"{=u64:tms}", Instant::now().as_millis() }
 
-#[cfg(feature = "defmt-timestamp-uptime-tus")]
+#[cfg(all(feature = "defmt-timestamp-uptime-tus", feature = "duration-u32"))]
+defmt::timestamp! {"{=u32:tus}", Instant::now().as_micros() }
+
+#[cfg(all(feature = "defmt-timestamp-uptime-tus", not(feature = "duration-u32")))]
 defmt::timestamp! {"{=u64:tus}", Instant::now().as_micros() }
+

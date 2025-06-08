@@ -3,7 +3,7 @@
 use core::task::Context;
 
 #[cfg(feature = "time")]
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, DurationType, Timer};
 #[cfg(feature = "time")]
 use futures_util::FutureExt;
 
@@ -79,7 +79,7 @@ impl GenericPhy {
 // TODO: Factor out to shared functionality
 fn blocking_delay_us(us: u32) {
     #[cfg(feature = "time")]
-    embassy_time::block_for(Duration::from_micros(us as u64));
+    embassy_time::block_for(Duration::from_micros(us as DurationType));
     #[cfg(not(feature = "time"))]
     {
         let freq = unsafe { crate::rcc::get_freqs() }.sys.to_hertz().unwrap().0 as u64;

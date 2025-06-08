@@ -36,6 +36,8 @@ defmt-timestamp-uptime-ts = ["defmt"]
 defmt-timestamp-uptime-tms = ["defmt"]
 defmt-timestamp-uptime-tus = ["defmt"]
 
+duration-u32 = ["embassy-time-driver/tick-u32", "embassy-time-queue-utils/tick-u32"]
+
 #! ### Time Drivers
 
 #! Usually, time drivers are defined by a HAL, or a companion crate to the HAL. For `std` and WASM

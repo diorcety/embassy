@@ -1,4 +1,4 @@
-use super::{Duration, Instant};
+use super::{Duration, DurationType, Instant};
 use crate::Timer;
 
 /// Blocks for at least `duration`.
@@ -18,15 +18,15 @@ pub struct Delay;
 
 impl embedded_hal_1::delay::DelayNs for Delay {
     fn delay_ns(&mut self, ns: u32) {
-        block_for(Duration::from_nanos(ns as u64))
+        block_for(Duration::from_nanos(ns as DurationType))
     }
 
     fn delay_us(&mut self, us: u32) {
-        block_for(Duration::from_micros(us as u64))
+        block_for(Duration::from_micros(us as DurationType))
     }
 
     fn delay_ms(&mut self, ms: u32) {
-        block_for(Duration::from_millis(ms as u64))
+        block_for(Duration::from_millis(ms as DurationType))
     }
 }
 
@@ -46,36 +46,36 @@ impl embedded_hal_async::delay::DelayNs for Delay {
 
 impl embedded_hal_02::blocking::delay::DelayMs<u8> for Delay {
     fn delay_ms(&mut self, ms: u8) {
-        block_for(Duration::from_millis(ms as u64))
+        block_for(Duration::from_millis(ms as DurationType))
     }
 }
 
 impl embedded_hal_02::blocking::delay::DelayMs<u16> for Delay {
     fn delay_ms(&mut self, ms: u16) {
-        block_for(Duration::from_millis(ms as u64))
+        block_for(Duration::from_millis(ms as DurationType))
     }
 }
 
 impl embedded_hal_02::blocking::delay::DelayMs<u32> for Delay {
     fn delay_ms(&mut self, ms: u32) {
-        block_for(Duration::from_millis(ms as u64))
+        block_for(Duration::from_millis(ms as DurationType))
     }
 }
 
 impl embedded_hal_02::blocking::delay::DelayUs<u8> for Delay {
     fn delay_us(&mut self, us: u8) {
-        block_for(Duration::from_micros(us as u64))
+        block_for(Duration::from_micros(us as DurationType))
     }
 }
 
 impl embedded_hal_02::blocking::delay::DelayUs<u16> for Delay {
     fn delay_us(&mut self, us: u16) {
-        block_for(Duration::from_micros(us as u64))
+        block_for(Duration::from_micros(us as DurationType))
     }
 }
 
 impl embedded_hal_02::blocking::delay::DelayUs<u32> for Delay {
     fn delay_us(&mut self, us: u32) {
-        block_for(Duration::from_micros(us as u64))
+        block_for(Duration::from_micros(us as DurationType))
     }
 }
