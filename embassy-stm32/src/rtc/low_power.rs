@@ -1,6 +1,7 @@
 use super::{bcd2_to_byte, DateTimeError, Rtc, RtcError};
 use crate::peripherals::RTC;
 use crate::rtc::SealedInstance;
+use embassy_time::TickType;
 
 /// Represents an instant in time that can be substracted to compute a duration
 pub(super) struct RtcInstant {
@@ -52,7 +53,7 @@ impl core::ops::Sub for RtcInstant {
         let other_ticks = rhs.second as u32 * (psc + 1) + (psc - rhs.subsecond as u32);
         let rtc_ticks = self_ticks - other_ticks;
 
-        Duration::from_ticks(((rtc_ticks * TICK_HZ as u32) / (psc + 1)) as u64)
+        Duration::from_ticks(((rtc_ticks * TICK_HZ as u32) / (psc + 1)) as TickType)
     }
 }
 
@@ -138,14 +139,14 @@ impl Rtc {
         #[cfg(any(rcc_wb, rcc_f4, rcc_f410))]
         unsafe { crate::rcc::get_freqs() }.rtc.to_hertz().unwrap();
 
-        let requested_duration = requested_duration.as_ticks().clamp(0, u32::MAX as u64);
-        let rtc_hz = Self::frequency().0 as u64;
+        let requested_duration = requested_duration.as_ticks().clamp(0, u32::MAX as TickType);
+        let rtc_hz = Self::frequency().0 as TickType;
         let rtc_ticks = requested_duration * rtc_hz / TICK_HZ;
-        let prescaler = WakeupPrescaler::compute_min((rtc_ticks / u16::MAX as u64) as u32);
+        let prescaler = WakeupPrescaler::compute_min((rtc_ticks / u16::MAX as TickType) as u32);
 
         // adjust the rtc ticks to the prescaler and subtract one rtc tick
-        let rtc_ticks = rtc_ticks / prescaler as u64;
-        let rtc_ticks = rtc_ticks.clamp(0, (u16::MAX - 1) as u64).saturating_sub(1) as u16;
+        let rtc_ticks = rtc_ticks / prescaler as TickType;
+        let rtc_ticks = rtc_ticks.clamp(0, (u16::MAX - 1) as TickType).saturating_sub(1) as u16;
 
         self.write(false, |regs| {
             regs.cr().modify(|w| w.set_wute(false));
@@ -173,7 +174,7 @@ impl Rtc {
         let instant = self.instant().unwrap();
         trace!(
             "rtc: start wakeup alarm for {} ms (psc: {}, ticks: {}) at {}",
-            Duration::from_ticks(rtc_ticks as u64 * TICK_HZ * prescaler as u64 / rtc_hz).as_millis(),
+            Duration::from_ticks(rtc_ticks as TickType * TICK_HZ * prescaler as TickType / rtc_hz).as_millis(),
             prescaler as u32,
             rtc_ticks,
             instant,

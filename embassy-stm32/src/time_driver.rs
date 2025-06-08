@@ -6,7 +6,7 @@ use core::sync::atomic::{compiler_fence, AtomicU32, Ordering};
 use critical_section::CriticalSection;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::blocking_mutex::Mutex;
-use embassy_time_driver::{Driver, TICK_HZ};
+use embassy_time_driver::{Driver, TICK_HZ, TickType};
 use embassy_time_queue_utils::Queue;
 use stm32_metapac::timer::{regs, TimGp16};
 
@@ -190,12 +190,12 @@ fn regs_gp16() -> TimGp16 {
 // corresponds to the next period.
 //
 // `period` is a 32bit integer, so It overflows on 2^32 * 2^15 / 32768 seconds of uptime, which is 136 years.
-fn calc_now(period: u32, counter: u16) -> u64 {
-    ((period as u64) << 15) + ((counter as u32 ^ ((period & 1) << 15)) as u64)
+fn calc_now(period: u32, counter: u16) -> TickType {
+    (((period as u64) << 15) + ((counter as u32 ^ ((period & 1) << 15)) as u64)) as TickType
 }
 
 struct AlarmState {
-    timestamp: Cell<u64>,
+    timestamp: Cell<TickType>,
 }
 
 unsafe impl Send for AlarmState {}
@@ -203,7 +203,7 @@ unsafe impl Send for AlarmState {}
 impl AlarmState {
     const fn new() -> Self {
         Self {
-            timestamp: Cell::new(u64::MAX),
+            timestamp: Cell::new(TickType::MAX),
         }
     }
 }
@@ -300,7 +300,7 @@ impl RtcDriver {
         // We only modify the period from the timer interrupt, so we know this can't race.
         let period = self.period.load(Ordering::Relaxed) + 1;
         self.period.store(period, Ordering::Relaxed);
-        let t = (period as u64) << 15;
+        let t = ((period as u64) << 15) as TickType;
 
         critical_section::with(move |cs| {
             r.dier().modify(move |w| {
@@ -445,7 +445,7 @@ impl RtcDriver {
         })
     }
 
-    fn set_alarm(&self, cs: CriticalSection, timestamp: u64) -> bool {
+    fn set_alarm(&self, cs: CriticalSection, timestamp: TickType) -> bool {
         let r = regs_gp16();
 
         let n = 0;
@@ -457,7 +457,7 @@ impl RtcDriver {
             // Disarm the alarm and return `false` to indicate that.
             r.dier().modify(|w| w.set_ccie(n + 1, false));
 
-            self.alarm.borrow(cs).timestamp.set(u64::MAX);
+            self.alarm.borrow(cs).timestamp.set(TickType::MAX);
 
             return false;
         }
@@ -479,7 +479,7 @@ impl RtcDriver {
             // It is the caller's responsibility to handle this ambiguity.
             r.dier().modify(|w| w.set_ccie(n + 1, false));
 
-            self.alarm.borrow(cs).timestamp.set(u64::MAX);
+            self.alarm.borrow(cs).timestamp.set(TickType::MAX);
 
             return false;
         }
@@ -490,7 +490,7 @@ impl RtcDriver {
 }
 
 impl Driver for RtcDriver {
-    fn now(&self) -> u64 {
+    fn now(&self) -> TickType {
         let r = regs_gp16();
 
         let period = self.period.load(Ordering::Relaxed);
@@ -499,7 +499,7 @@ impl Driver for RtcDriver {
         calc_now(period, counter)
     }
 
-    fn schedule_wake(&self, at: u64, waker: &core::task::Waker) {
+    fn schedule_wake(&self, at: TickType, waker: &core::task::Waker) {
         critical_section::with(|cs| {
             let mut queue = self.queue.borrow(cs).borrow_mut();
 

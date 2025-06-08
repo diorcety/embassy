@@ -5,6 +5,12 @@ use core::task::Waker;
 
 use embassy_executor::raw::TaskRef;
 
+#[cfg(feature = "tick-u32")]
+pub type TickType = u32;
+
+#[cfg(not(feature = "tick-u32"))]
+pub type TickType = u64;
+
 /// A timer queue, with items integrated into tasks.
 pub struct Queue {
     head: Cell<Option<TaskRef>>,
@@ -20,7 +26,7 @@ impl Queue {
     ///
     /// If this function returns `true`, the called should find the next expiration time and set
     /// a new alarm for that time.
-    pub fn schedule_wake(&mut self, at: u64, waker: &Waker) -> bool {
+    pub fn schedule_wake(&mut self, at: TickType, waker: &Waker) -> bool {
         let task = embassy_executor::raw::task_from_waker(waker);
         let item = task.timer_queue_item();
         if item.next.get().is_none() {
@@ -47,8 +53,8 @@ impl Queue {
     ///
     /// The provided callback will be called for each expired task. Tasks that never expire
     /// will be removed, but the callback will not be called.
-    pub fn next_expiration(&mut self, now: u64) -> u64 {
-        let mut next_expiration = u64::MAX;
+    pub fn next_expiration(&mut self, now: TickType) -> TickType {
+        let mut next_expiration = TickType::MAX;
 
         self.retain(|p| {
             let item = p.timer_queue_item();
@@ -61,7 +67,7 @@ impl Queue {
             } else {
                 // Timer didn't yet expire, or never expires.
                 next_expiration = min(next_expiration, expires);
-                expires != u64::MAX
+                expires != TickType::MAX
             }
         });
 

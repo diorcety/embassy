@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use embassy_time::{Duration, Instant};
+use embassy_time::{Duration, Instant, TickType};
 use smoltcp::time::{Duration as SmolDuration, Instant as SmolInstant};
 
 pub(crate) fn instant_to_smoltcp(instant: Instant) -> SmolInstant {
@@ -8,13 +8,13 @@ pub(crate) fn instant_to_smoltcp(instant: Instant) -> SmolInstant {
 }
 
 pub(crate) fn instant_from_smoltcp(instant: SmolInstant) -> Instant {
-    Instant::from_micros(instant.total_micros() as u64)
+    Instant::from_micros(instant.total_micros() as TickType)
 }
 
 pub(crate) fn duration_to_smoltcp(duration: Duration) -> SmolDuration {
-    SmolDuration::from_micros(duration.as_micros())
+    SmolDuration::from_micros(duration.as_micros() as u64)
 }
 
 pub(crate) fn duration_from_smoltcp(duration: SmolDuration) -> Duration {
-    Duration::from_micros(duration.total_micros())
+    Duration::from_micros(duration.total_micros() as TickType)
 }

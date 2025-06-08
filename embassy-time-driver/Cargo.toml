@@ -26,6 +26,8 @@ src_base_git = "https://github.com/embassy-rs/embassy/blob/$COMMIT/embassy-time-
 target = "x86_64-unknown-linux-gnu"
 
 [features]
+tick-u32 = []
+
 #! ### Tick Rate
 #!
 #! At most 1 `tick-*` feature can be enabled. If none is enabled, a default of 1MHz is used.

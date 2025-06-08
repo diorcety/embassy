@@ -7,9 +7,15 @@ use core::task::Waker;
 
 use heapless::Vec;
 
+#[cfg(feature = "tick-u32")]
+pub type TickType = u32;
+
+#[cfg(not(feature = "tick-u32"))]
+pub type TickType = u64;
+
 #[derive(Debug)]
 struct Timer {
-    at: u64,
+    at: TickType,
     waker: Waker,
 }
 
@@ -48,7 +54,7 @@ impl<const QUEUE_SIZE: usize> ConstGenericQueue<QUEUE_SIZE> {
     ///
     /// If this function returns `true`, the called should find the next expiration time and set
     /// a new alarm for that time.
-    pub fn schedule_wake(&mut self, at: u64, waker: &Waker) -> bool {
+    pub fn schedule_wake(&mut self, at: TickType, waker: &Waker) -> bool {
         self.queue
             .iter_mut()
             .find(|timer| timer.waker.will_wake(waker))
@@ -80,8 +86,8 @@ impl<const QUEUE_SIZE: usize> ConstGenericQueue<QUEUE_SIZE> {
     }
 
     /// Dequeues expired timers and returns the next alarm time.
-    pub fn next_expiration(&mut self, now: u64) -> u64 {
-        let mut next_alarm = u64::MAX;
+    pub fn next_expiration(&mut self, now: TickType) -> TickType {
+        let mut next_alarm = TickType::MAX;
 
         let mut i = 0;
         while i < self.queue.len() {
@@ -135,12 +141,12 @@ impl Queue {
     ///
     /// If this function returns `true`, the called should find the next expiration time and set
     /// a new alarm for that time.
-    pub fn schedule_wake(&mut self, at: u64, waker: &Waker) -> bool {
+    pub fn schedule_wake(&mut self, at: TickType, waker: &Waker) -> bool {
         self.queue.schedule_wake(at, waker)
     }
 
     /// Dequeues expired timers and returns the next alarm time.
-    pub fn next_expiration(&mut self, now: u64) -> u64 {
+    pub fn next_expiration(&mut self, now: TickType) -> TickType {
         self.queue.next_expiration(now)
     }
 }

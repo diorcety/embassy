@@ -4,6 +4,12 @@ use core::cell::Cell;
 
 use super::TaskRef;
 
+#[cfg(feature = "tick-u32")]
+pub type TickType = u32;
+
+#[cfg(not(feature = "tick-u32"))]
+pub type TickType = u64;
+
 #[cfg(feature = "_timer-item-payload")]
 macro_rules! define_opaque {
     ($size:tt) => {
@@ -52,7 +58,7 @@ pub struct TimerQueueItem {
     pub next: Cell<Option<TaskRef>>,
 
     /// The time at which this item expires.
-    pub expires_at: Cell<u64>,
+    pub expires_at: Cell<TickType>,
 
     /// Some implementation-defined, zero-initialized piece of data.
     #[cfg(feature = "_timer-item-payload")]

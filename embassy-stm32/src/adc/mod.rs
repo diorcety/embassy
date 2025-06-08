@@ -82,7 +82,7 @@ pub(crate) trait SealedAdcChannel<T> {
 #[allow(unused)]
 pub(crate) fn blocking_delay_us(us: u32) {
     #[cfg(feature = "time")]
-    embassy_time::block_for(embassy_time::Duration::from_micros(us as u64));
+    embassy_time::block_for(embassy_time::Duration::from_micros(us as embassy_time::DurationType));
     #[cfg(not(feature = "time"))]
     {
         let freq = unsafe { crate::rcc::get_freqs() }.sys.to_hertz().unwrap().0 as u64;

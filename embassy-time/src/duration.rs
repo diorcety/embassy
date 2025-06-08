@@ -4,51 +4,57 @@ use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 use super::{GCD_1K, GCD_1M, TICK_HZ};
 use crate::GCD_1G;
 
+#[cfg(feature = "duration-u32")]
+pub type DurationType = u32;
+
+#[cfg(not(feature = "duration-u32"))]
+pub type DurationType = u64;
+
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 /// Represents the difference between two [Instant](struct.Instant.html)s
 pub struct Duration {
-    pub(crate) ticks: u64,
+    pub(crate) ticks: DurationType,
 }
 
 impl Duration {
     /// The smallest value that can be represented by the `Duration` type.
-    pub const MIN: Duration = Duration { ticks: u64::MIN };
+    pub const MIN: Duration = Duration { ticks: DurationType::MIN };
     /// The largest value that can be represented by the `Duration` type.
-    pub const MAX: Duration = Duration { ticks: u64::MAX };
+    pub const MAX: Duration = Duration { ticks: DurationType::MAX };
 
     /// Tick count of the `Duration`.
-    pub const fn as_ticks(&self) -> u64 {
+    pub const fn as_ticks(&self) -> DurationType {
         self.ticks
     }
 
     /// Convert the `Duration` to seconds, rounding down.
-    pub const fn as_secs(&self) -> u64 {
+    pub const fn as_secs(&self) -> DurationType {
         self.ticks / TICK_HZ
     }
 
     /// Convert the `Duration` to milliseconds, rounding down.
-    pub const fn as_millis(&self) -> u64 {
+    pub const fn as_millis(&self) -> DurationType {
         self.ticks * (1000 / GCD_1K) / (TICK_HZ / GCD_1K)
     }
 
     /// Convert the `Duration` to microseconds, rounding down.
-    pub const fn as_micros(&self) -> u64 {
+    pub const fn as_micros(&self) -> DurationType {
         self.ticks * (1_000_000 / GCD_1M) / (TICK_HZ / GCD_1M)
     }
 
     /// Creates a duration from the specified number of clock ticks
-    pub const fn from_ticks(ticks: u64) -> Duration {
+    pub const fn from_ticks(ticks: DurationType) -> Duration {
         Duration { ticks }
     }
 
     /// Creates a duration from the specified number of seconds, rounding up.
-    pub const fn from_secs(secs: u64) -> Duration {
+    pub const fn from_secs(secs: DurationType) -> Duration {
         Duration { ticks: secs * TICK_HZ }
     }
 
     /// Creates a duration from the specified number of milliseconds, rounding up.
-    pub const fn from_millis(millis: u64) -> Duration {
+    pub const fn from_millis(millis: DurationType) -> Duration {
         Duration {
             ticks: div_ceil(millis * (TICK_HZ / GCD_1K), 1000 / GCD_1K),
         }
@@ -56,7 +62,7 @@ impl Duration {
 
     /// Creates a duration from the specified number of microseconds, rounding up.
     /// NOTE: Delays this small may be inaccurate.
-    pub const fn from_micros(micros: u64) -> Duration {
+    pub const fn from_micros(micros: DurationType) -> Duration {
         Duration {
             ticks: div_ceil(micros * (TICK_HZ / GCD_1M), 1_000_000 / GCD_1M),
         }
@@ -64,19 +70,19 @@ impl Duration {
 
     /// Creates a duration from the specified number of nanoseconds, rounding up.
     /// NOTE: Delays this small may be inaccurate.
-    pub const fn from_nanos(micros: u64) -> Duration {
+    pub const fn from_nanos(micros: DurationType) -> Duration {
         Duration {
             ticks: div_ceil(micros * (TICK_HZ / GCD_1G), 1_000_000_000 / GCD_1G),
         }
     }
 
     /// Creates a duration from the specified number of seconds, rounding down.
-    pub const fn from_secs_floor(secs: u64) -> Duration {
+    pub const fn from_secs_floor(secs: DurationType) -> Duration {
         Duration { ticks: secs * TICK_HZ }
     }
 
     /// Creates a duration from the specified number of milliseconds, rounding down.
-    pub const fn from_millis_floor(millis: u64) -> Duration {
+    pub const fn from_millis_floor(millis: DurationType) -> Duration {
         Duration {
             ticks: millis * (TICK_HZ / GCD_1K) / (1000 / GCD_1K),
         }
@@ -84,7 +90,7 @@ impl Duration {
 
     /// Creates a duration from the specified number of microseconds, rounding down.
     /// NOTE: Delays this small may be inaccurate.
-    pub const fn from_micros_floor(micros: u64) -> Duration {
+    pub const fn from_micros_floor(micros: DurationType) -> Duration {
         Duration {
             ticks: micros * (TICK_HZ / GCD_1M) / (1_000_000 / GCD_1M),
         }
@@ -93,7 +99,7 @@ impl Duration {
     /// Creates a duration corresponding to the specified Hz.
     /// NOTE: Giving this function a hz >= the TICK_HZ of your platform will clamp the Duration to 1
     /// tick. Doing so will not deadlock, but will certainly not produce the desired output.
-    pub const fn from_hz(hz: u64) -> Duration {
+    pub const fn from_hz(hz: DurationType) -> Duration {
         let ticks = {
             if hz >= TICK_HZ {
                 1
@@ -198,14 +204,14 @@ impl<'a> fmt::Display for Duration {
 }
 
 #[inline]
-const fn div_ceil(num: u64, den: u64) -> u64 {
+const fn div_ceil(num: DurationType, den: DurationType) -> DurationType {
     (num + den - 1) / den
 }
 
 impl TryFrom<core::time::Duration> for Duration {
-    type Error = <u64 as TryFrom<u128>>::Error;
+    type Error = <DurationType as TryFrom<u128>>::Error;
 
-    /// Converts using [`Duration::from_micros`]. Fails if value can not be represented as u64.
+    /// Converts using [`Duration::from_micros`]. Fails if value can not be represented as DurationType.
     fn try_from(value: core::time::Duration) -> Result<Self, Self::Error> {
         Ok(Self::from_micros(value.as_micros().try_into()?))
     }
@@ -214,6 +220,6 @@ impl TryFrom<core::time::Duration> for Duration {
 impl From<Duration> for core::time::Duration {
     /// Converts using [`Duration::as_micros`].
     fn from(value: Duration) -> Self {
-        core::time::Duration::from_micros(value.as_micros())
+        core::time::Duration::from_micros(value.as_micros() as u64)
     }
 }
