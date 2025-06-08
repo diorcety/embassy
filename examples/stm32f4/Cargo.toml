@@ -6,15 +6,16 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 # Change stm32f429zi to your chip name, if necessary.
-embassy-stm32 = { version = "0.2.0", path = "../../embassy-stm32", features = ["stm32f401re", "unstable-pac", "memory-x", "time-driver-tim4", "exti", "chrono", "rt"], default-features = false }
+embassy-stm32 = { version = "0.2.0", path = "../../embassy-stm32", features = ["stm32f401re", "unstable-pac", "memory-x", "exti", "chrono", "rt"], default-features = false }
 embassy-sync = { version = "0.7.0", path = "../../embassy-sync", features = [] }
 embassy-executor = { version = "0.7.0", path = "../../embassy-executor", features = ["arch-cortex-m", "executor-thread", "executor-interrupt"] }
-embassy-time = { version = "0.4.0", path = "../../embassy-time", features = ["defmt-timestamp-uptime", "tick-hz-32_768"] }
+embassy-time = { version = "0.4.0", path = "../../embassy-time", features = ["defmt-timestamp-uptime", "tick-hz-1_000"] }
 embassy-usb = { version = "0.4.0", path = "../../embassy-usb", features = [] }
 embassy-net = { version = "0.7.0", path = "../../embassy-net", features = ["tcp", "dhcpv4", "medium-ethernet", ] }
 embassy-net-wiznet = { version = "0.2.0", path = "../../embassy-net-wiznet", features = ["defmt"] }
 embassy-futures = { version = "0.1.0", path = "../../embassy-futures" }
-
+embassy-time-queue-utils = { version = "0.1.0", path = "../../embassy-time-queue-utils" }
+embassy-time-driver = { version = "0.2.0", path = "../../embassy-time-driver" }
 panic-halt = "1.0"
 
 cortex-m = { version = "0.7.6", features = ["inline-asm", "critical-section-single-core"] }
