@@ -1847,7 +1847,7 @@ fn main() {
 
     // ========
     // Generate DMA IRQs.
-
+/*
     let dma_irqs: TokenStream = dma_irqs
         .iter()
         .map(|(irq, channels)| {
@@ -1868,6 +1868,7 @@ fn main() {
         .collect();
 
     g.extend(dma_irqs);
+*/
 
     g.extend(quote! {
         pub(crate) const DMA_CHANNELS: &[crate::dma::ChannelInfo] = &[#dmas];

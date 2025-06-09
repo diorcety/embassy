@@ -326,7 +326,7 @@ macro_rules! impl_irq {
     };
 }
 
-foreach_exti_irq!(impl_irq);
+//foreach_exti_irq!(impl_irq);
 
 trait SealedChannel {}
 
