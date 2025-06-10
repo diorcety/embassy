@@ -62,6 +62,8 @@ use cortex_m::peripheral::SCB;
 use embassy_executor::*;
 
 use crate::interrupt;
+
+#[cfg(feature = "_time-driver")]
 use crate::time_driver::{get_driver, RtcDriver};
 
 const THREAD_PENDER: usize = usize::MAX;
@@ -174,6 +176,7 @@ pub struct Executor {
     inner: raw::Executor,
     not_send: PhantomData<*mut ()>,
     scb: SCB,
+    #[cfg(feature = "_time-driver")]
     time_driver: &'static RtcDriver,
     stop_mode: Option<StopMode>,
 }
@@ -188,6 +191,7 @@ impl Executor {
                 inner: raw::Executor::new(THREAD_PENDER as *mut ()),
                 not_send: PhantomData,
                 scb: cortex_m::Peripherals::steal().SCB,
+                #[cfg(feature = "_time-driver")]
                 time_driver: get_driver(),
                 stop_mode: None,
             });
@@ -199,11 +203,13 @@ impl Executor {
     }
 
     unsafe fn on_wakeup_irq(&mut self) {
+        #[cfg(feature = "_time-driver")]
         self.time_driver.resume_time();
         trace!("low power: resume");
     }
 
     pub(self) fn stop_with_rtc(&mut self, rtc: &'static Rtc) {
+        #[cfg(feature = "_time-driver")]
         self.time_driver.set_rtc(rtc);
 
         rtc.enable_wakeup_line();
@@ -258,6 +264,7 @@ impl Executor {
             return;
         }
 
+        #[cfg(feature = "_time-driver")]
         if self.time_driver.pause_time().is_err() {
             trace!("low power: failed to pause time");
             return;
