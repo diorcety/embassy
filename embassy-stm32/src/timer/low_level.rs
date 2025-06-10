@@ -258,9 +258,15 @@ impl<'d, T: CoreInstance> Timer<'d, T> {
         assert!(f > 0);
         let timer_f = T::frequency().0;
 
-        let pclk_ticks_per_timer_period = (timer_f / f) as u64;
-        let psc: u16 = unwrap!(((pclk_ticks_per_timer_period - 1) / (1 << max_divide_by_bits)).try_into());
-        let divide_by = pclk_ticks_per_timer_period / (u64::from(psc) + 1);
+        let pclk_ticks_per_timer_period = timer_f / f;
+        let psc: u16 = {
+            if max_divide_by_bits >= 32 {
+                0
+            } else {
+                unwrap!(((pclk_ticks_per_timer_period - 1) / (1 << max_divide_by_bits)).try_into())
+            }
+        };
+        let divide_by = pclk_ticks_per_timer_period / (u32::from(psc) + 1);
 
         match T::BITS {
             TimerBits::Bits16 => {
