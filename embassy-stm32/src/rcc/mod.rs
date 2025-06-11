@@ -67,7 +67,7 @@ pub(crate) fn set_freqs_ptr(freqs: *mut MaybeUninit<Clocks>) {
 /// Sets the clock frequencies
 ///
 /// Safety: Sets a mutable global.
-pub(crate) unsafe fn set_freqs(freqs: Clocks) {
+pub unsafe fn set_freqs(freqs: Clocks) {
     debug!("rcc: {:?}", freqs);
     CLOCK_FREQS = MaybeUninit::new(freqs);
 }
@@ -76,7 +76,7 @@ pub(crate) unsafe fn set_freqs(freqs: Clocks) {
 /// Sets the clock frequencies
 ///
 /// Safety: Sets a mutable global.
-pub(crate) unsafe fn set_freqs(freqs: Clocks) {
+pub unsafe fn set_freqs(freqs: Clocks) {
     debug!("rcc: {:?}", freqs);
     CLOCK_FREQS_PTR
         .load(core::sync::atomic::Ordering::SeqCst)
@@ -85,13 +85,13 @@ pub(crate) unsafe fn set_freqs(freqs: Clocks) {
 
 #[cfg(not(feature = "_dual-core"))]
 /// Safety: Reads a mutable global.
-pub(crate) unsafe fn get_freqs() -> &'static Clocks {
+pub unsafe fn get_freqs() -> &'static Clocks {
     (*core::ptr::addr_of_mut!(CLOCK_FREQS)).assume_init_ref()
 }
 
 #[cfg(feature = "_dual-core")]
 /// Safety: Reads a mutable global.
-pub(crate) unsafe fn get_freqs() -> &'static Clocks {
+pub unsafe fn get_freqs() -> &'static Clocks {
     unwrap!(CLOCK_FREQS_PTR.load(core::sync::atomic::Ordering::SeqCst).as_ref()).assume_init_ref()
 }
 
