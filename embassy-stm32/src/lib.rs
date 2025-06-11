@@ -46,9 +46,9 @@ pub mod dma;
 pub mod gpio;
 pub mod rcc;
 #[cfg(feature = "_time-driver")]
-mod time_driver;
+pub mod time_driver;
 #[cfg(feature = "_systick-driver")]
-mod systick_driver;
+pub mod systick_driver;
 pub mod timer;
 
 // Sometimes-present hardware
@@ -602,12 +602,13 @@ fn init_hw(config: Config) -> Peripherals {
             #[cfg(feature = "exti")]
             exti::init(cs);
 
+            #[cfg(not(feature = "rcc-not-initizalized"))]
             rcc::init(config.rcc);
 
             // must be after rcc init
-            #[cfg(feature = "_time-driver")]
+            #[cfg(all(feature = "_time-driver", not(feature = "rcc-not-initizalized")))]
             time_driver::init(cs);
-            #[cfg(feature = "_systick-driver")]
+            #[cfg(all(feature = "_systick-driver", not(feature = "rcc-not-initizalized")))]
             systick_driver::init(cs);
 
             #[cfg(feature = "low-power")]
