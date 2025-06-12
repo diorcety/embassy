@@ -96,7 +96,7 @@ impl Div<Hertz> for Hertz {
 /// An `Option<Hertz>` can be `.into()`'d into this type and back.
 /// The only restriction is that that [Hertz] cannot have the value 0 since that's
 /// seen as the `None` variant.
-pub struct MaybeHertz(u32);
+pub struct MaybeHertz(pub u32);
 
 impl MaybeHertz {
     /// Same as calling the `.into()` function, but without type inference.
