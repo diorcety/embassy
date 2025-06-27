@@ -47,6 +47,8 @@ pub mod gpio;
 pub mod rcc;
 #[cfg(feature = "_time-driver")]
 mod time_driver;
+#[cfg(feature = "_systick-driver")]
+mod systick_driver;
 pub mod timer;
 
 // Sometimes-present hardware
@@ -433,9 +435,11 @@ mod dual_core {
                 )
             }
 
-            #[cfg(feature = "_time-driver")]
             // must be after rcc init
+            #[cfg(feature = "_time-driver")]
             time_driver::init(cs);
+            #[cfg(feature = "_systick-driver")]
+            systick_driver::init(cs);
         });
 
         Peripherals::take()
@@ -603,6 +607,8 @@ fn init_hw(config: Config) -> Peripherals {
             // must be after rcc init
             #[cfg(feature = "_time-driver")]
             time_driver::init(cs);
+            #[cfg(feature = "_systick-driver")]
+            systick_driver::init(cs);
 
             #[cfg(feature = "low-power")]
             {

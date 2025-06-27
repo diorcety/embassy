@@ -229,7 +229,8 @@ fn main() {
             ]
             .iter()
             .find(|tim| singletons.contains(&tim.to_string())).expect("time-driver-any requested, but the chip doesn't have TIM1, TIM2, TIM3, TIM4, TIM5, TIM8, TIM9, TIM12, TIM15, TIM20, TIM21, TIM22, TIM23 or TIM24.")
-        }
+        },
+        Some("systick") => "SYSTICK",
         _ => panic!("unknown time_driver {:?}", time_driver),
     };
 
@@ -238,7 +239,7 @@ fn main() {
     }
     for tim in [
         "tim1", "tim2", "tim3", "tim4", "tim5", "tim8", "tim9", "tim12", "tim15", "tim20", "tim21", "tim22", "tim23",
-        "tim24",
+        "tim24", "systick",
     ] {
         cfgs.declare(format!("time_driver_{}", tim));
     }

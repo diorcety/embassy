@@ -151,6 +151,7 @@ time = ["dep:embassy-time", "embassy-embedded-hal/time"]
 # Features starting with `_` are for internal use only. They're not intended
 # to be enabled by other crates, and are not covered by semver guarantees.
 _time-driver = ["dep:embassy-time-driver", "time", "dep:embassy-time-queue-utils"]
+_systick-driver = ["dep:embassy-time-driver", "time", "dep:embassy-time-queue-utils", "dep:embassy-executor"]
 
 ## Use any time driver
 time-driver-any = ["_time-driver"]
@@ -182,6 +183,8 @@ time-driver-tim22 = ["_time-driver"]
 time-driver-tim23 = ["_time-driver"]
 ## Use TIM24 as time driver
 time-driver-tim24 = ["_time-driver"]
+## Use systick as time driver
+time-driver-systick = ["_systick-driver"]
 
 
 #! ## Analog Switch Pins (Pxy_C) on STM32H7 series
