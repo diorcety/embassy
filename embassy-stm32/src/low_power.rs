@@ -66,6 +66,9 @@ use crate::interrupt;
 #[cfg(feature = "_time-driver")]
 use crate::time_driver::{get_driver, RtcDriver};
 
+#[cfg(feature = "_systick-driver")]
+use crate::systick_driver::{get_driver, SystickDriver};
+
 const THREAD_PENDER: usize = usize::MAX;
 
 use crate::rtc::Rtc;
@@ -178,6 +181,8 @@ pub struct Executor {
     scb: SCB,
     #[cfg(feature = "_time-driver")]
     time_driver: &'static RtcDriver,
+    #[cfg(feature = "_systick-driver")]
+    systick_driver: &'static SystickDriver,
     stop_mode: Option<StopMode>,
 }
 
@@ -193,6 +198,8 @@ impl Executor {
                 scb: cortex_m::Peripherals::steal().SCB,
                 #[cfg(feature = "_time-driver")]
                 time_driver: get_driver(),
+                #[cfg(feature = "_systick-driver")]
+                systick_driver: get_driver(),
                 stop_mode: None,
             });
 
@@ -205,6 +212,8 @@ impl Executor {
     unsafe fn on_wakeup_irq(&mut self) {
         #[cfg(feature = "_time-driver")]
         self.time_driver.resume_time();
+        #[cfg(feature = "_systick-driver")]
+        self.systick_driver.resume_time();
         trace!("low power: resume");
     }
 
@@ -267,6 +276,11 @@ impl Executor {
         #[cfg(feature = "_time-driver")]
         if self.time_driver.pause_time().is_err() {
             trace!("low power: failed to pause time");
+            return;
+        }
+        #[cfg(feature = "_systick-driver")]
+        if self.systick_driver.pause_time().is_err() {
+            trace!("low power: failed to pause systick");
             return;
         }
 

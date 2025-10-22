@@ -221,7 +221,7 @@ impl AtomicTick {
     }
 }
 
-struct SystickDriver {
+pub(crate) struct SystickDriver {
     current: AtomicTick,
     next: AtomicTick,
     queue: Mutex<CriticalSectionRawMutex, RefCell<Queue>>,
@@ -263,6 +263,23 @@ impl SystickDriver {
         }
     }
 
+    #[cfg(feature = "low-power")]
+    /// Pause the timer if ready; return err if not
+    pub(crate) fn pause_time(&self) -> Result<(), ()> {
+        let mut syst = unsafe { cortex_m::Peripherals::steal().SYST };
+        syst.disable_counter();
+        syst.disable_interrupt();
+        Ok(())
+    }
+
+    #[cfg(feature = "low-power")]
+    /// Resume the timer with the given offset
+    pub(crate) fn resume_time(&self) {
+        let mut syst = unsafe { cortex_m::Peripherals::steal().SYST };
+        syst.enable_counter();
+        syst.enable_interrupt();
+    }
+
     fn set_alarm(&self, _cs: &CriticalSection, at: TickType) -> bool {
         if is_expired(self.now(), at) {
             return false;
@@ -300,6 +317,11 @@ embassy_time_driver::time_driver_impl!(static SYSTICK_DRIVER: SystickDriver = Sy
 fn SysTick() {
     // Call the driver's tick handler
     SYSTICK_DRIVER.on_interrupt();
+}
+
+#[cfg(feature = "low-power")]
+pub(crate) fn get_driver() -> &'static SystickDriver {
+    &SYSTICK_DRIVER
 }
 
 pub fn init(_cs: critical_section::CriticalSection) {
